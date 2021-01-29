@@ -10,7 +10,6 @@ from pickle import dump
 import autocomplete
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
-autocomplete.load()
 from autocomplete import models
 
 def build_model():
@@ -24,9 +23,7 @@ def build_model():
           content = content.strip()
           content = content.lower()
           all_contents.append(content)
-  print(''.join(all_contents))
   models.train_models(''.join(all_contents))
-  models.save_models()
 
 def read_files():
   tokenized_files = []
@@ -52,7 +49,6 @@ def generate_possibilities(current_string):
     generate_output = generate_all(current_string, letter) 
     for more_output in generate_output:
       if more_output not in suggestions:
-        print(more_output, suggestions)
         suggestions.append(more_output)
   return sort_tuple(suggestions)[:3]
 
@@ -83,4 +79,4 @@ def predict(s1, s2):
 
 # if __name__ == "__main__"
 build_model()
-predict('comic', '')
+print(predict('comic', ''))

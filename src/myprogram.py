@@ -27,7 +27,8 @@ class MyModel:
     @classmethod
     def load_training_data(cls):
         tokenized_files = cls.read_files()
-        # this particular model doesn't train
+
+        # 
         return []
 
     @classmethod

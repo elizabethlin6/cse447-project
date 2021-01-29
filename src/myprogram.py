@@ -2,6 +2,7 @@
 import os
 import string
 import random
+import re
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 
 
@@ -9,10 +10,23 @@ class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
-
+    @classmethod
+    def read_files(cls):
+        tokenized_files = []
+        for file in os.listdir('data/train'):
+            with open('data/train/' + file, 'r') as f:
+                content = f.read()
+                content = content.replace("<br /><br />", "")
+                content = re.sub('[^A-Za-z\']', " ", content)
+                content = content.strip()
+                content = content.lower()
+            tokens = content.split()
+            tokenized_files.append(tokens)
+        return tokenized_files
+          
     @classmethod
     def load_training_data(cls):
-        # your code here
+        tokenized_files = cls.read_files()
         # this particular model doesn't train
         return []
 

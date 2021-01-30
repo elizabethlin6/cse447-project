@@ -108,7 +108,6 @@ class MyModel:
         # Predict without any history
         if len(suggestions) < 3:
             new_suggestions = cls.generate_word(s2)
-            print(new_suggestions)
             for i in range(3):
                 if len(new_suggestions) - 1 < i:
                     suggestions.append((s2 + "s", 0))
@@ -117,8 +116,6 @@ class MyModel:
                 
                 if len(suggestions) == 3:
                     break
-
-        print(suggestions)
 
         return cls.get_characters(suggestions, s2)
 

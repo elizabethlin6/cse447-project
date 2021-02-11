@@ -3,6 +3,7 @@ import os
 import string
 import random
 import re
+import pickle
 import autocomplete
 from autocomplete import models
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
@@ -16,15 +17,15 @@ class MyModel:
     @classmethod
     def load_training_data(cls):
         all_contents = []
-        for file in os.listdir('data/train'):
-            with open('data/train/' + file, 'r') as f:
-                content = f.read()
-                content = content.replace("<br /><br />", "")
-                content = re.sub('[^A-Za-z\']', " ", content)
-                content = re.sub("\s\s+" , " ", content)
-                content = content.strip()
-                content = content.lower()
-                all_contents.append(content)
+        #for file in os.listdir('data/guttenberg'):
+        with open('data/guttenberg/fileaa.txt', 'r') as f:
+            content = f.read()
+            content = re.sub('[^A-Za-z\']', " ", content)
+            content = re.sub("\s\s+" , " ", content)
+            content = content.replace(" \'", "\'")
+            content = content.strip()
+            all_contents.append(content)
+            print(content)
         return all_contents
 
     @classmethod

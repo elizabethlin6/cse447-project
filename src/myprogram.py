@@ -4,30 +4,55 @@ import string
 import random
 import re
 import pickle
-import autocomplete
-from autocomplete import models
+# import autocomplete
+# from autocomplete import models
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
+from collections import Counter
+from nltk.util import ngrams
+
 
 
 class MyModel:
     """
     This is a starter model to get you started. Feel free to modify this file.
     """
+
+    def __init__(cls, unigrams, bigrams_map):
+        cls.bigrams_map = bigrams_map
+        cls.unigrams = unigrams
+
+    def __init__(cls):
+        cls.bigrams_map = {}
+        cls.unigrams = Counter()
           
     @classmethod
     def load_training_data(cls):
-        all_contents = []
-        #for file in os.listdir('data/guttenberg'):
-        with open('data/guttenberg/fileaa.txt', 'r') as f:
-            content = f.read()
-            content = re.sub('[^A-Za-z\']', " ", content)
-            content = re.sub("\s\s+" , " ", content)
-            content = content.replace(" \'", "\'")
-            content = content.strip()
-            all_contents.append(content)
-            print(content)
-        return all_contents
+        unigrams = Counter()
+        bigrams = []
+        for file in os.listdir('data/guttenberg/'):
+            with open('data/guttenberg/' + file, 'r') as f:
+                content = f.read()
+                content = re.sub('[^A-Za-z\']', " ", content)
+                content = re.sub("\s\s+" , " ", content)
+                content = content.replace(" '", "'")
+                content = content.strip()
+                content = content.split()
+                unigrams = unigrams + Counter(ngrams(content, 1))
+                bigrams = bigrams + list(ngrams(content, 2))
+        return unigrams, bigrams
 
+    @classmethod
+    def generate_bigram_map(cls, bigrams):
+        self.bigrams_map = {word1:Counter() for word1, word2 in bigrams}
+        for bigram in bigrams:
+            self.bigrams_map[bigram[0]].update([bigram[1]])
+        return bigrams_map
+
+    @classmethod
+    def get_suggestions(cls, s1, s2):
+        suggestions = {word:freq for word, freq in self.bigrams_map[s1].items() if w.startswith(s2)}
+        return Counter(suggestions).most_common(10)
+        
     @classmethod
     def load_test_data(cls, fname):
         data = []
@@ -45,8 +70,10 @@ class MyModel:
                 f.write('{}\n'.format(p))
 
     @classmethod
-    def run_train(cls, data, work_dir):
-        models.train_models(''.join(data))
+    def run_train(cls, work_dir):
+        cls.unigrams, bigrams = cls.load_training_data()
+        cls.bigrams_map = cls.generate_bigram_map(bigrams)
+        # models.train_models(''.join(data))
 
     @classmethod
     def sort_tuple(cls, tup): 
@@ -68,7 +95,7 @@ class MyModel:
     def generate_all(cls, current_string, next_char):
         top_tup_words = []
         seen_characters = set()
-        words = autocomplete.predict(current_string, next_char)
+        words = cls.get_suggestions(current_string, next_char)
         for tup_word in words:
             if len(top_tup_words) == 3:
                 break
@@ -139,12 +166,18 @@ class MyModel:
         return preds
 
     def save(self, work_dir):
-        models.save_models(os.path.join(work_dir, 'model.checkpoint'))
+        pickle.dump({'unigram_map': self.unigrams,
+                    'bigrams_map': self.bigrams_map},
+                    open(os.path.join(work_dir, 'model.checkpoint'), 'wb'),
+                    protocol=2)
+
+        # models.save_models(os.path.join(work_dir, 'model.checkpoint'))
 
     @classmethod
     def load(cls, work_dir):
-        models.load_models(os.path.join(work_dir, 'model.checkpoint'))
-        return MyModel()
+        models = pickle.load(open(os.path.join(work_dir, 'model.checkpoint'),'rb'))
+
+        return MyModel(models['unigrams'], models['bigrams_map'])
 
 
 if __name__ == '__main__':
@@ -161,12 +194,11 @@ if __name__ == '__main__':
         if not os.path.isdir(args.work_dir):
             print('Making working directory {}'.format(args.work_dir))
             os.makedirs(args.work_dir)
+            
         print('Instantiating model')
         model = MyModel()
-        print('Loading training data')
-        train_data = MyModel.load_training_data()
         print('Training')
-        model.run_train(train_data, args.work_dir)
+        model.run_train(args.work_dir)
         print('Saving model')
         model.save(args.work_dir)
     elif args.mode == 'test':

@@ -17,14 +17,11 @@ class MyModel:
     This is a starter model to get you started. Feel free to modify this file.
     """
 
-    def __init__(cls, unigrams, bigrams_map):
-        cls.bigrams_map = bigrams_map
-        cls.unigrams = unigrams
-
-    def __init__(cls):
-        cls.bigrams_map = {}
-        cls.unigrams = Counter()
-          
+    @classmethod
+    def __init__(self, unigrams = Counter(), bigrams_map = {}):
+        self.bigrams_map = bigrams_map
+        self.unigrams = unigrams
+    
     @classmethod
     def load_training_data(cls):
         unigrams = Counter()
@@ -37,20 +34,20 @@ class MyModel:
                 content = content.replace(" '", "'")
                 content = content.strip()
                 content = content.split()
-                unigrams = unigrams + Counter(ngrams(content, 1))
+                unigrams = unigrams + Counter(content)
                 bigrams = bigrams + list(ngrams(content, 2))
         return unigrams, bigrams
 
     @classmethod
     def generate_bigram_map(cls, bigrams):
-        self.bigrams_map = {word1:Counter() for word1, word2 in bigrams}
+        cls.bigrams_map = {word1:Counter() for word1, word2 in bigrams}
         for bigram in bigrams:
-            self.bigrams_map[bigram[0]].update([bigram[1]])
-        return bigrams_map
+            cls.bigrams_map[bigram[0]].update([bigram[1]])
+        return cls.bigrams_map
 
     @classmethod
     def get_suggestions(cls, s1, s2):
-        suggestions = {word:freq for word, freq in self.bigrams_map[s1].items() if w.startswith(s2)}
+        suggestions = {word:freq for word, freq in cls.bigrams_map[s1].items() if w.startswith(s2)}
         return Counter(suggestions).most_common(10)
         
     @classmethod
@@ -72,7 +69,9 @@ class MyModel:
     @classmethod
     def run_train(cls, work_dir):
         cls.unigrams, bigrams = cls.load_training_data()
+        print('Halfway!')
         cls.bigrams_map = cls.generate_bigram_map(bigrams)
+        print('Done Training')
         # models.train_models(''.join(data))
 
     @classmethod
@@ -108,7 +107,10 @@ class MyModel:
     def generate_word(cls, s2):
         seen_characters = set()
         top_tup_words = []
-        words = [(k, v) for k, v in models.WORDS_MODEL.most_common() if k.startswith(s2) and k != s2]
+        print(cls.unigrams.most_common())
+        # print(type(cls.unigrams.most_common().items())
+
+        words = [(k, v) for k, v in cls.unigrams.most_common().items() if k.startswith(s2) and k != s2]
         for tup_word in words:
             if len(top_tup_words) == 3:
                 break
@@ -177,7 +179,7 @@ class MyModel:
     def load(cls, work_dir):
         models = pickle.load(open(os.path.join(work_dir, 'model.checkpoint'),'rb'))
 
-        return MyModel(models['unigrams'], models['bigrams_map'])
+        return MyModel(models['unigram_map'], models['bigrams_map'])
 
 
 if __name__ == '__main__':
@@ -194,7 +196,7 @@ if __name__ == '__main__':
         if not os.path.isdir(args.work_dir):
             print('Making working directory {}'.format(args.work_dir))
             os.makedirs(args.work_dir)
-            
+
         print('Instantiating model')
         model = MyModel()
         print('Training')

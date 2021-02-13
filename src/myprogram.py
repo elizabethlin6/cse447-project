@@ -47,7 +47,7 @@ class MyModel:
 
     @classmethod
     def get_suggestions(cls, s1, s2):
-        suggestions = {word:freq for word, freq in cls.bigrams_map[s1].items() if w.startswith(s2)}
+        suggestions = {word:freq for word, freq in cls.bigrams_map[s1].items() if word.startswith(s2)}
         return Counter(suggestions).most_common(10)
         
     @classmethod
@@ -107,10 +107,8 @@ class MyModel:
     def generate_word(cls, s2):
         seen_characters = set()
         top_tup_words = []
-        print(cls.unigrams.most_common())
-        # print(type(cls.unigrams.most_common().items())
 
-        words = [(k, v) for k, v in cls.unigrams.most_common().items() if k.startswith(s2) and k != s2]
+        words = [(k, v) for k, v in cls.unigrams.most_common() if k.startswith(s2) and k != s2]
         for tup_word in words:
             if len(top_tup_words) == 3:
                 break

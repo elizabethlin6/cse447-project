@@ -26,8 +26,8 @@ class MyModel:
     def load_training_data(cls):
         unigrams = Counter()
         bigrams = []
-        for file in os.listdir('data/guttenberg/'):
-            with open('data/guttenberg/' + file, 'r') as f:
+        for file in os.listdir('data/multilang/'):
+            with open('data/multilang/' + file, 'r') as f:
                 content = f.read()
                 content = re.sub('[^A-Za-z\']', " ", content)
                 content = re.sub("\s\s+" , " ", content)

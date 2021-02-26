@@ -94,13 +94,19 @@ class MyModel:
     def generate_all(cls, current_string, next_char):
         top_tup_words = []
         seen_characters = set()
-        words = cls.get_suggestions(current_string, next_char)
-        for tup_word in words:
-            if len(top_tup_words) == 3:
-                break
-            elif tup_word[0][len(next_char)] not in seen_characters:
-                seen_characters.add(tup_word[0][len(next_char)])
-                top_tup_words.append(tup_word)
+
+        if current_string in cls.bigrams_map: 
+            words = cls.get_suggestions(current_string, next_char)
+            for tup_word in words:
+                if len(top_tup_words) == 3:
+                    break
+                if len(tup_word[0]) > len(next_char):
+                    if tup_word[0][len(next_char)] not in seen_characters:
+                        seen_characters.add(tup_word[0][len(next_char)])
+                        top_tup_words.append(tup_word)
+        else:
+            top_tup_words = [('the', 'cool'), ('hi', 'super'), ('eat', 'food')]
+        
         return top_tup_words # [(w, s). ....]
 
     @classmethod
@@ -110,18 +116,24 @@ class MyModel:
 
         words = [(k, v) for k, v in cls.unigrams.most_common() if k.startswith(s2) and k != s2]
         for tup_word in words:
+            cur_char = tup_word[0]
             if len(top_tup_words) == 3:
                 break
-            elif tup_word[0][len(s2)] not in seen_characters:
-                seen_characters.add(tup_word[0][len(s2)])
-                top_tup_words.append(tup_word)
+            if len(cur_char) > len(s2):
+                if cur_char[len(s2)] not in seen_characters:
+                    seen_characters.add(cur_char[len(s2)])
+                    top_tup_words.append(tup_word)
         return top_tup_words
 
     @classmethod
-    def get_characters(cls, list, s2):
+    def get_characters(cls, lst, s2):
         output_list = []
-        for word in list:
-            output_list.append(word[0][len(s2)])
+        for word in lst:
+            curr_char = word[0]
+            if len(curr_char) > len(s2):
+                output_list.append(curr_char[len(s2)])
+        if len(output_list) == 0:  # check if empty, no words
+            return ['o', 'o', 'v']
         return output_list
 
     @classmethod    
@@ -136,12 +148,14 @@ class MyModel:
         # Predict without any history
         if len(suggestions) < 3:
             new_suggestions = cls.generate_word(s2)
+            if len(new_suggestions) == 0: 
+                return ['o', 'o', 'v']
+
             for i in range(3):
                 if len(new_suggestions) - 1 < i:
                     suggestions.append((s2 + "s", 0))
                 elif new_suggestions[i][0] not in [j[0] for j in suggestions]:
                     suggestions.append(new_suggestions[i])
-                
                 if len(suggestions) == 3:
                     break
 

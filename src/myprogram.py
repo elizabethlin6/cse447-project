@@ -165,14 +165,18 @@ class MyModel:
         preds = []
         all_chars = string.ascii_letters
         for inp in data:
+            # print(inp)
+            if len(inp) > 0:
             # this model just predicts a random character each time
-            words = inp.split()
-            if len(words) == 1:
-                prediction = self.predict('', words[0])
+                words = inp.split()
+                # print(words)
+                if len(words) == 1:
+                    prediction = self.predict('', words[0])
+                else:
+                    prediction = self.predict(words[len(words) - 2], words[len(words) - 1])
+                preds.append(''.join(prediction))
             else:
-                prediction = self.predict(words[len(words) - 2], words[len(words) - 1])
-
-            preds.append(''.join(prediction))
+                preds.append('nul')
 
             '''top_guesses = [random.choice(all_chars) for _ in range(3)]
             preds.append(''.join(top_guesses))'''

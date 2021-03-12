@@ -4,13 +4,9 @@ import string
 import random
 import re
 import pickle
-# import autocomplete
-# from autocomplete import models
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from collections import Counter
 from nltk.util import ngrams
-
-
 
 class MyModel:
     """
@@ -27,7 +23,7 @@ class MyModel:
         unigrams = Counter()
         bigrams = []
         for file in os.listdir('data/multilang/'):
-            with open('data/multilang/' + file, 'r') as f:
+            with open('data/multilang/'.join(file), 'r') as f:
                 content = f.read()
                 content = re.sub('[^A-Za-z\']', " ", content)
                 content = re.sub("\s\s+" , " ", content)
@@ -52,12 +48,8 @@ class MyModel:
         
     @classmethod
     def load_test_data(cls, fname):
-        data = []
         with open(fname) as f:
-            for line in f:
-                inp = line[:-1]  # the last character is a newline
-                inp = inp.lower()
-                data.append(inp)
+            data = [line[:-1].lower() for line in f]
         return data
 
     @classmethod
@@ -69,10 +61,7 @@ class MyModel:
     @classmethod
     def run_train(cls, work_dir):
         cls.unigrams, bigrams = cls.load_training_data()
-        print('Halfway!')
         cls.bigrams_map = cls.generate_bigram_map(bigrams)
-        print('Done Training')
-        # models.train_models(''.join(data))
 
     @classmethod
     def sort_tuple(cls, tup): 
@@ -85,9 +74,7 @@ class MyModel:
         suggestions = []
         for letter in alphabet:
             generate_output = cls.generate_all(current_string, letter) 
-            for more_output in generate_output:
-                if more_output not in suggestions:
-                    suggestions.append(more_output)
+            suggestions = list(set(generate_output))
         return sort_tuple(suggestions)[:3]
 
     @classmethod
@@ -100,10 +87,15 @@ class MyModel:
             for tup_word in words:
                 if len(top_tup_words) == 3:
                     break
-                if len(tup_word[0]) > len(next_char):
-                    if tup_word[0][len(next_char)] not in seen_characters:
-                        seen_characters.add(tup_word[0][len(next_char)])
-                        top_tup_words.append(tup_word)
+
+                if tup_word[0] == next_char:
+                    new_tup_word = (next_char + " ", tup_word[1])
+                    seen_characters.add(" ")
+                    top_tup_words.append(new_tup_word)
+    
+                elif len(tup_word[0]) > len(next_char) and tup_word[0][len(next_char)] not in seen_characters:
+                    seen_characters.add(tup_word[0][len(next_char)])
+                    top_tup_words.append(tup_word)
         else:
             top_tup_words = [('the', 'cool'), ('hi', 'super'), ('eat', 'food')]
         
@@ -114,24 +106,26 @@ class MyModel:
         seen_characters = set()
         top_tup_words = []
 
-        words = [(k, v) for k, v in cls.unigrams.most_common() if k.startswith(s2) and k != s2]
+        words = [(k, v) for k, v in cls.unigrams.most_common() if k.startswith(s2)]
         for tup_word in words:
             cur_char = tup_word[0]
             if len(top_tup_words) == 3:
                 break
-            if len(cur_char) > len(s2):
-                if cur_char[len(s2)] not in seen_characters:
-                    seen_characters.add(cur_char[len(s2)])
-                    top_tup_words.append(tup_word)
+
+            if cur_char == s2:
+                new_tup_word = (s2 + " ", tup_word[1])
+                seen_characters.add(" ")
+                top_tup_words.append(new_tup_word)
+
+            elif len(cur_char) > len(s2) and cur_char[len(s2)] not in seen_characters:
+                seen_characters.add(cur_char[len(s2)])
+                top_tup_words.append(tup_word)
         return top_tup_words
 
     @classmethod
     def get_characters(cls, lst, s2):
-        output_list = []
-        for word in lst:
-            curr_char = word[0]
-            if len(curr_char) > len(s2):
-                output_list.append(curr_char[len(s2)])
+        output_list = [word[0][len(s2)] for word in lst if len(word[0]) > len(s2)]
+
         if len(output_list) == 0:  # check if empty, no words
             return ['o', 'o', 'v']
         return output_list
@@ -165,11 +159,9 @@ class MyModel:
         preds = []
         all_chars = string.ascii_letters
         for inp in data:
-            # print(inp)
             if len(inp) > 0:
             # this model just predicts a random character each time
                 words = inp.split()
-                # print(words)
                 if len(words) == 1:
                     prediction = self.predict('', words[0])
                 else:
@@ -188,8 +180,6 @@ class MyModel:
                     'bigrams_map': self.bigrams_map},
                     open(os.path.join(work_dir, 'model.checkpoint'), 'wb'),
                     protocol=2)
-
-        # models.save_models(os.path.join(work_dir, 'model.checkpoint'))
 
     @classmethod
     def load(cls, work_dir):
@@ -224,8 +214,10 @@ if __name__ == '__main__':
         model = MyModel.load(args.work_dir)
         print('Loading test data from {}'.format(args.test_data))
         test_data = MyModel.load_test_data(args.test_data)
+        
         print('Making predictions')
         pred = model.run_pred(test_data)
+                
         print('Writing predictions to {}'.format(args.test_output))
         assert len(pred) == len(test_data), 'Expected {} predictions but got {}'.format(len(test_data), len(pred))
         model.write_pred(pred, args.test_output)
